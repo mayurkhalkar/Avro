@@ -22,3 +22,39 @@ with beam.Pipeline(options=options) as p:
     
     # Write the Avro data to Google Cloud Storage
     avro_data | "Write to GCS" >> beam.io.WriteToAvro(GCS_OUTPUT_PATH)
+=========================
+
+import apache_beam as beam
+from apache_beam.options.pipeline_options import PipelineOptions
+from apache_beam.io.avroio import WriteToAvro
+import requests
+
+class APIToAvro(beam.DoFn):
+    def process(self, element):
+        # Make an HTTP GET request to the API endpoint
+        response = requests.get(element)
+        
+        # Check if the request was successful
+        if response.status_code == 200:
+            # Parse the response and yield each element
+            api_data = response.json()
+            for item in api_data:
+                yield item
+        else:
+            # If the request fails, log an error
+            print(f"Failed to fetch data from API. Status code: {response.status_code}")
+
+# Replace this value with your actual API endpoint
+API_ENDPOINT = "https://api.example.com/data"
+GCS_OUTPUT_PATH = "gs://your-bucket-name/output.avro"
+
+options = PipelineOptions()
+with beam.Pipeline(options=options) as p:
+    # Read the API endpoint directly into the pipeline
+    api_response = p | "Read API" >> beam.Create([API_ENDPOINT])
+    
+    # Process the API response and convert it to Avro format
+    avro_data = api_response | "Convert to Avro" >> beam.ParDo(APIToAvro())
+    
+    # Write the Avro data to Google Cloud Storage
+    avro_data | "Write to GCS" >> WriteToAvro(file_path_prefix=GCS_OUTPUT_PATH)
