@@ -1,0 +1,24 @@
+import apache_beam as beam
+from apache_beam.options.pipeline_options import PipelineOptions
+
+class APIToAvro(beam.DoFn):
+    def process(self, element):
+        # Here you would parse the API response and extract the necessary data
+        # For demonstration, let's assume 'element' is already in the desired format
+        
+        # Return each element to be processed by the next step in the pipeline
+        yield element
+
+# Replace these values with your actual API endpoint and Google Cloud Storage path
+API_ENDPOINT = "https://api.example.com/data"
+GCS_OUTPUT_PATH = "gs://your-bucket-name/output.avro"
+
+options = PipelineOptions()
+with beam.Pipeline(options=options) as p:
+    api_response = p | "Read API" >> beam.io.ReadFromText(API_ENDPOINT)
+    
+    # Process the API response and convert it to Avro format
+    avro_data = api_response | "Convert to Avro" >> beam.ParDo(APIToAvro())
+    
+    # Write the Avro data to Google Cloud Storage
+    avro_data | "Write to GCS" >> beam.io.WriteToAvro(GCS_OUTPUT_PATH)
