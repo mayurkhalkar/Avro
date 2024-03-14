@@ -1,0 +1,48 @@
+import pandas as pd
+from fastavro import writer, parse_schema
+import avro.schema
+
+def generate_avro_schema(df):
+    fields = []
+    for column, dtype in df.dtypes.items():
+        if str(dtype) == 'object':
+            avro_type = 'string'
+        elif 'int' in str(dtype):
+            avro_type = 'int'
+        elif 'float' in str(dtype):
+            avro_type = 'float'
+        elif 'bool' in str(dtype):
+            avro_type = 'boolean'
+        else:
+            avro_type = 'string'  # Default to string
+
+        fields.append({'name': column, 'type': avro_type})
+
+    avro_schema = {
+        'type': 'record',
+        'name': 'DataFrameRecord',
+        'fields': fields
+    }
+
+    return avro_schema
+
+def pandas_df_to_avro_file(df, avro_filename):
+    avro_schema = generate_avro_schema(df)
+    parsed_schema = parse_schema(avro_schema)
+
+    records = df.to_dict('records')
+
+    with open(avro_filename, 'wb') as out_avro:
+        writer(out_avro, parsed_schema, records)
+
+# Example usage:
+data = {
+    'A': [1, 2, 3],
+    'B': ['foo', 'bar', 'baz'],
+    'C': [True, False, True]
+}
+
+df = pd.DataFrame(data)
+
+pandas_df_to_avro_file(df, 'data.avro')
+================
