@@ -1,0 +1,28 @@
+import avro.schema
+from avro.datafile import DataFileWriter
+from avro.io import DatumWriter
+import requests
+from google.cloud import storage
+from io import BytesIO
+
+# Fetching data from API
+api_response = requests.get('https://api.example.com/data')
+data = api_response.json()
+
+# Avro schema definition
+schema = avro.schema.parse(open("schema.avsc", "rb").read())
+
+# Writing data into Avro file
+buffer = BytesIO()
+writer = DataFileWriter(buffer, DatumWriter(), schema)
+for record in data:
+    writer.append(record)
+writer.close()
+
+# Upload Avro file to GCS bucket
+storage_client = storage.Client()
+bucket_name = 'your_bucket_name'
+bucket = storage_client.bucket(bucket_name)
+blob = bucket.blob('data.avro')
+blob.upload_from_file(BytesIO(buffer.getvalue()), content_type='avro/binary')
+print("Avro file uploaded to GCS bucket:", blob.name)
