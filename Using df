@@ -45,4 +45,22 @@ data = {
 df = pd.DataFrame(data)
 
 pandas_df_to_avro_file(df, 'data.avro')
-================
+=========imp=======
+import pandas as pd
+import fastavro
+
+def pandas_df_to_avro(df, avro_filename):
+    with open(avro_filename, 'wb') as out:
+        fastavro.writer(out, schema=fastavro.schemaless_writer(df.columns), records=df.to_dict('records'))
+
+data = {
+    'A': [1, 2, 3],
+    'B': ['foo', 'bar', 'baz'],
+    'C': [True, False, True]
+}
+df = pd.DataFrame(data)
+
+pandas_df_to_avro(df, 'data.avro')
+=============
+
+
