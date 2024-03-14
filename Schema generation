@@ -1,0 +1,47 @@
+from avro import schema, datafile, io
+from avro.schema import SchemaFromJSONData
+
+# Sample JSON data
+json_data = {
+    "nan_value": float('nan'),
+    "int_value": 42,
+    "float_value": 3.14,
+    "string_value": "Hello, world!",
+    "date_value": "2024-03-14",
+    "datetime_value": "2024-03-14T12:00:00Z",
+    "list_value": [1, 2, 3],
+    "dict_value": {"key1": "value1", "key2": "value2"}
+}
+
+# Convert JSON data to Avro schema
+def convert_json_to_avro_schema(json_data):
+    fields = []
+    for key, value in json_data.items():
+        if isinstance(value, dict):
+            fields.append(schema.Field(key, SchemaFromJSONData(value), ''))
+        elif isinstance(value, list):
+            if len(value) > 0:
+                fields.append(schema.Field(key, schema.ArraySchema(SchemaFromJSONData(value[0])), ''))
+            else:
+                fields.append(schema.Field(key, schema.ArraySchema(schema.PrimitiveSchema("null")), ''))
+        elif isinstance(value, float):
+            if str(value) == "nan":
+                fields.append(schema.Field(key, schema.PrimitiveSchema("float"), ''))
+            else:
+                fields.append(schema.Field(key, schema.PrimitiveSchema("double"), ''))
+        elif isinstance(value, int):
+            fields.append(schema.Field(key, schema.PrimitiveSchema("int"), ''))
+        elif isinstance(value, str):
+            fields.append(schema.Field(key, schema.PrimitiveSchema("string"), ''))
+        else:
+            # Add additional checks for other data types as needed
+            pass
+
+    return schema.RecordSchema('record', 'auto_generated', fields)
+
+# Generate Avro schema
+avro_schema = convert_json_to_avro_schema(json_data)
+
+# Write Avro schema to a file
+with open('output.avsc', 'w') as schema_file:
+    schema_file.write(avro_schema.to_json())
