@@ -1,0 +1,41 @@
+import requests
+import fastavro.schema
+import fastavro.writer
+from google.cloud import storage
+from avro.schema import RecordSchema
+
+def get_api_data(api_url):
+    response = requests.get(api_url)
+    return response.json()
+
+def generate_avro_schema(data):
+    fields = []
+    for key, value in data.items():
+        if isinstance(value, int):
+            field_type = 'int'
+        elif isinstance(value, float):
+            field_type = 'float'
+        elif isinstance(value, bool):
+            field_type = 'boolean'
+        else:
+            field_type = 'string'
+        fields.append({"name": key, "type": field_type})
+    return {"type": "record", "name": "MyRecord", "fields": fields}
+
+def write_avro_to_gcs(data, schema, bucket_name, file_name):
+    with storage.Client() as client:
+        bucket = client.bucket(bucket_name)
+        blob = bucket.blob(file_name)
+        with blob.open("w") as f:
+            fastavro.writer(f, schema, data)
+
+def main(api_url, bucket_name, file_name):
+    data = get_api_data(api_url)
+    schema = generate_avro_schema(data)
+    write_avro_to_gcs([data], schema, bucket_name, file_name)
+
+if __name__ == "__main__":
+    api_url = "YOUR_API_URL"
+    bucket_name = "YOUR_BUCKET_NAME"
+    file_name = "output.avro"
+    main(api_url, bucket_name, file_name)
