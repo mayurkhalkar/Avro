@@ -1,0 +1,99 @@
+import pandas as pd
+import json
+import fastavro
+from google.cloud import storage
+import avro.schema
+from avro.datafile import DataFileReader, DataFileWriter
+from avro.io import DatumReader, DatumWriter
+import io
+
+# Sample API response
+api_response = [
+    {"name": "Alice", "age": 30},
+    {"name": "Bob", "age": 35},
+    {"name": "Charlie", "age": 40}
+]
+
+# Define GCS bucket
+bucket_name = "your_bucket_name"
+
+# 1. Using fastavro with Pandas DataFrame
+df = pd.DataFrame(api_response)
+avro_buffer_1 = io.BytesIO()
+fastavro.writer(avro_buffer_1, df.to_dict(orient='records'))
+avro_buffer_1.seek(0)
+upload_to_gcs(avro_buffer_1, bucket_name, "avro_with_pandas.avro")
+
+# 2. Using fastavro with Python dictionary
+avro_schema = {
+    "type": "record",
+    "name": "User",
+    "fields": [
+        {"name": "name", "type": "string"},
+        {"name": "age", "type": "int"}
+    ]
+}
+avro_buffer_2 = io.BytesIO()
+fastavro.writer(avro_buffer_2, avro_schema, api_response)
+avro_buffer_2.seek(0)
+upload_to_gcs(avro_buffer_2, bucket_name, "avro_with_dict.avro")
+
+# 3. Using avro-python3 with Python dictionary
+avro_schema = {
+    "type": "record",
+    "name": "User",
+    "fields": [
+        {"name": "name", "type": "string"},
+        {"name": "age", "type": "int"}
+    ]
+}
+avro_buffer_3 = io.BytesIO()
+writer = DataFileWriter(avro_buffer_3, DatumWriter(), avro.schema.Parse(json.dumps(avro_schema)))
+for record in api_response:
+    writer.append(record)
+writer.close()
+avro_buffer_3.seek(0)
+upload_to_gcs(avro_buffer_3, bucket_name, "avro_with_avro_python3.avro")
+
+# 4. Using fastavro with JSON data
+avro_schema = {
+    "type": "record",
+    "name": "User",
+    "fields": [
+        {"name": "name", "type": "string"},
+        {"name": "age", "type": "int"}
+    ]
+}
+avro_buffer_4 = io.BytesIO()
+fastavro.writer(avro_buffer_4, avro_schema, api_response)
+avro_buffer_4.seek(0)
+upload_to_gcs(avro_buffer_4, bucket_name, "avro_with_json_data.avro")
+
+# 5. Using avro-python3 with JSON data
+avro_schema = {
+    "type": "record",
+    "name": "User",
+    "fields": [
+        {"name": "name", "type": "string"},
+        {"name": "age", "type": "int"}
+    ]
+}
+avro_buffer_5 = io.BytesIO()
+writer = DataFileWriter(avro_buffer_5, DatumWriter(), avro.schema.Parse(json.dumps(avro_schema)))
+for record in api_response:
+    writer.append(record)
+writer.close()
+avro_buffer_5.seek(0)
+upload_to_gcs(avro_buffer_5, bucket_name, "avro_with_json_data_avro_python3.avro")
+
+
+# Function to upload file to GCS
+def upload_to_gcs(data, bucket_name, file_name):
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(file_name)
+    blob.upload_from_file(data, content_type='avro/binary')
+    print("File uploaded to GCS:", file_name)
+
+
+print("All Avro files uploaded successfully to GCS bucket:", bucket_name)
