@@ -1,0 +1,112 @@
+import pandas as pd
+import jsonschema
+import pyavroc
+import avro.schema
+from avro.datafile import DataFileWriter
+from avro.io import DatumWriter
+from fastavro import writer, parse_schema
+import pandas_avro
+import pyarrow as pa
+import pyarrow.json as pa_json
+
+# 1. Using jsonschema to generate Avro schema:
+def pandas_df_to_avro_file_1(df, avro_filename):
+    schema = jsonschema.infer(df)
+    parsed_schema = parse_schema(schema)
+    with open(avro_filename, 'wb') as out_avro:
+        writer(out_avro, parsed_schema, df.to_dict('records'))
+
+# 2. Using a library to convert Pandas DataFrame directly to Avro:
+def pandas_df_to_avro_file_2(df, avro_filename):
+    df.to_avro(avro_filename)
+
+# 3. Using pyavroc library:
+def pandas_df_to_avro_file_3(df, avro_filename):
+    with open(avro_filename, 'wb') as out_avro:
+        pyavroc.Writer(out_avro, df)
+
+# 4. Using avro-python3 library:
+def pandas_df_to_avro_file_4(df, avro_filename):
+    schema = avro.schema.parse(open("schema.avsc").read())
+    writer = DataFileWriter(open(avro_filename, "wb"), DatumWriter(), schema)
+    for row in df.to_dict('records'):
+        writer.append(row)
+    writer.close()
+
+# 5. Using fastavro with schema defined manually:
+def pandas_df_to_avro_file_5(df, avro_filename):
+    avro_schema = {
+        "type": "record",
+        "name": "DataFrameRecord",
+        "fields": [
+            {"name": col, "type": ["null", "string"]}
+            for col in df.columns
+        ]
+    }
+    parsed_schema = parse_schema(avro_schema)
+    with open(avro_filename, 'wb') as out_avro:
+        writer(out_avro, parsed_schema, df.to_dict('records'))
+
+# 6. Using fastavro with schema defined manually and custom types:
+def pandas_df_to_avro_file_6(df, avro_filename):
+    avro_schema = {
+        "type": "record",
+        "name": "DataFrameRecord",
+        "fields": [
+            {"name": col, "type": ["null", "int"]} if df[col].dtype == 'int64'
+            else {"name": col, "type": ["null", "string"]}
+            for col in df.columns
+        ]
+    }
+    parsed_schema = parse_schema(avro_schema)
+    with open(avro_filename, 'wb') as out_avro:
+        writer(out_avro, parsed_schema, df.to_dict('records'))
+
+# 7. Using fastavro with schema generated using Avro's Schema class:
+def pandas_df_to_avro_file_7(df, avro_filename):
+    avro_schema = schema.Schema.from_pandas(df)
+    parsed_schema = parse_schema(avro_schema)
+    with open(avro_filename, 'wb') as out_avro:
+        writer(out_avro, parsed_schema, df.to_dict('records'))
+
+# 8. Using fastavro with schema inferred from Arrow:
+def pandas_df_to_avro_file_8(df, avro_filename):
+    arrow_table = pa.Table.from_pandas(df)
+    schema = pa_json.infer_schema(arrow_table)
+    parsed_schema = parse_schema(schema.to_json())
+    with open(avro_filename, 'wb') as out_avro:
+        writer(out_avro, parsed_schema, df.to_dict('records'))
+
+# 9. Using fastavro with manually defined schema and Arrow conversion:
+def pandas_df_to_avro_file_9(df, avro_filename):
+    arrow_table = pa.Table.from_pandas(df)
+    schema = {
+        "type": "record",
+        "name": "DataFrameRecord",
+        "fields": [
+            {"name": col, "type": ["null", "string"]}
+            for col in df.columns
+        ]
+    }
+    parsed_schema = parse_schema(schema)
+    with open(avro_filename, 'wb') as out_avro:
+        writer(out_avro, parsed_schema, df.to_dict('records'))
+
+# Example usage:
+data = {
+    'A': [1, 2, 3],
+    'B': ['foo', 'bar', 'baz'],
+    'C': [True, False, True]
+}
+df = pd.DataFrame(data)
+
+# Call any of the functions above with the DataFrame and the desired filename
+pandas_df_to_avro_file_1(df, 'data1.avro')
+pandas_df_to_avro_file_2(df, 'data2.avro')
+pandas_df_to_avro_file_3(df, 'data3.avro')
+pandas_df_to_avro_file_4(df, 'data4.avro')
+pandas_df_to_avro_file_5(df, 'data5.avro')
+pandas_df_to_avro_file_6(df, 'data6.avro')
+pandas_df_to_avro_file_7(df, 'data7.avro')
+pandas_df_to_avro_file_8(df, 'data8.avro')
+pandas_df_to_avro_file_9(df, 'data9.avro')
