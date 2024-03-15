@@ -1,0 +1,110 @@
+from google.cloud import storage
+import io
+
+# Create a BytesIO object with some data
+data = b"Hello, this is some data."
+bytes_io = io.BytesIO(data)
+
+# Initialize the client
+client = storage.Client()
+
+# Access your GCS bucket
+bucket = client.get_bucket('your_bucket_name')
+
+# Define the name of the file in the bucket
+blob_name = 'example_file.txt'
+
+# Create a blob (file) in the bucket
+blob = bucket.blob(blob_name)
+
+# Write the data from BytesIO to the blob
+blob.upload_from_file(bytes_io)
+
+print(f"Data written to {blob_name} in the bucket.")
+============
+
+import apache_beam as beam
+from apache_beam.options.pipeline_options import PipelineOptions
+
+# Define pipeline options
+pipeline_options = PipelineOptions()
+
+# Create a pipeline to read bytes data, convert to Avro, and write to GCS
+with beam.Pipeline(options=pipeline_options) as pipeline:
+    (pipeline
+     | beam.Create([bytes_data])
+     | 'Serialize to Avro' >> beam.Map(lambda x: serialize_to_avro(x))
+     | 'Write to GCS' >> beam.io.WriteToText('gs://your_bucket_name/avro_data.avro')
+    )
+==============
+
+from avro.datafile import DataFileReader, DataFileWriter
+from avro.io import DatumReader, DatumWriter
+from google.cloud import storage
+import io
+
+# Serialize data to Avro format
+def serialize_to_avro(data):
+    bytes_io = io.BytesIO()
+    writer = DataFileWriter(bytes_io, DatumWriter(), schema)
+    writer.append(data)
+    writer.close()
+    return bytes_io.getvalue()
+
+# Initialize GCS client
+client = storage.Client()
+
+# Access your GCS bucket
+bucket = client.get_bucket('your_bucket_name')
+
+# Define the name of the Avro file in the bucket
+blob_name = 'example.avro'
+
+# Serialize data to Avro
+avro_data = serialize_to_avro(data)
+
+# Upload Avro data to GCS
+blob = bucket.blob(blob_name)
+blob.upload_from_string(avro_data)
+
+print(f"Avro data written to {blob_name} in the bucket.")
+==========
+import avro.schema
+from avro.datafile import DataFileReader, DataFileWriter
+from avro.io import DatumReader, DatumWriter
+from google.cloud import storage
+import base64
+
+# Deserialize Avro data
+def deserialize_avro(avro_data):
+    schema = avro.schema.parse(schema_str)
+    bytes_io = io.BytesIO(avro_data)
+    reader = DataFileReader(bytes_io, DatumReader())
+    for record in reader:
+        return record
+
+def avro_to_gcs(data, context):
+    # Decode base64 encoded bytes data
+    bytes_data = base64.b64decode(data['data'])
+    
+    # Deserialize Avro data
+    avro_record = deserialize_avro(bytes_data)
+
+    # Initialize GCS client
+    client = storage.Client()
+    
+    # Access your GCS bucket
+    bucket = client.get_bucket('your_bucket_name')
+    
+    # Define the name of the Avro file in the bucket
+    blob_name = 'example.avro'
+    
+    # Serialize data to Avro
+    avro_data = serialize_to_avro(avro_record)
+    
+    # Upload Avro data to GCS
+    blob = bucket.blob(blob_name)
+    blob.upload_from_string(avro_data)
+    
+    print(f"Avro data written to {blob_name} in the bucket.")
+
