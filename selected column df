@@ -1,0 +1,32 @@
+import pandas as pd
+
+def select_columns(df, column_names):
+    # Select specific columns from DataFrame
+    selected_df = df[column_names]
+    return selected_df
+
+# Example usage:
+def create_dataframe_from_user_input():
+    # For demonstration, let's create a sample DataFrame
+    data = {
+        'A': [1, 2, 3],
+        'B': [4, 5, 6],
+        'C': [7, 8, 9]
+    }
+    df = pd.DataFrame(data)
+    return df
+
+# Receive DataFrame from user
+user_df = create_dataframe_from_user_input()
+
+# Receive column names from user (assuming a list of column names)
+columns_to_select = ['A', 'C']
+
+# Create new DataFrame with selected columns
+selected_df = select_columns(user_df, columns_to_select)
+
+print("Original DataFrame:")
+print(user_df)
+
+print("\nSelected Columns DataFrame:")
+print(selected_df)
