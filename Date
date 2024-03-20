@@ -1,0 +1,16 @@
+from datetime import datetime
+
+date_value = '2023-02-24 00:00:00'
+filename_pattern ='new_%Y%m%d_%H%M%S_temp.avro'
+
+def generate_filename(date_value, filename_pattern):
+    # Parse the date string into a datetime object
+    date_obj = datetime.strptime(date_value, '%Y-%m-%d %H:%M:%S')
+
+    # Format the datetime object according to the filename pattern
+    formatted_filename = date_obj.strftime(filename_pattern)
+    
+    return formatted_filename
+
+result_filename = generate_filename(date_value, filename_pattern)
+print(result_filename)
