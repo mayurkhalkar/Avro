@@ -1,0 +1,37 @@
+import json
+
+api_response = '''{
+  "status": "success",
+  "data": [
+    {
+      "user_id": 12345,
+      "username": "example_user1",
+      "age": 30,
+      "is_active": true
+    },
+    {
+      "user_id": 67890,
+      "username": "example_user2",
+      "email": "user2@example.com",
+      "age": 25,
+      "is_active": false
+    }
+  ]
+}'''
+
+# Convert the JSON string to a Python dictionary
+response_dict = json.loads(api_response)
+
+# Iterate over each record in the "data" array
+for record in response_dict['data']:
+    # Check if 'email' field is missing
+    if 'email' not in record:
+        record['email'] = ''  # Set a default value of ''
+
+    # Check if 'age' field is missing
+    if 'age' not in record:
+        record['age'] = None  # Set a default value of None or any other suitable default value
+
+# Convert the modified dictionary back to a JSON string
+modified_response = json.dumps(response_dict, indent=2)
+print(modified_response)
