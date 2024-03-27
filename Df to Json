@@ -1,0 +1,24 @@
+import pandas as pd
+
+# Example JSON data
+json_data = '''
+{
+    "Name": ["Alice", "Bob", "Charlie"],
+    "Age": [25, 30, 35],
+    "City": ["New York", "Los Angeles", "Chicago"]
+}
+'''
+
+# Convert JSON data to DataFrame
+df = pd.read_json(json_data)
+
+# Display DataFrame
+print("DataFrame:")
+print(df)
+
+# Convert DataFrame back to JSON
+new_json_data = df.to_json(orient='records')
+
+# Display new JSON data
+print("\nNew JSON data:")
+print(new_json_data)
