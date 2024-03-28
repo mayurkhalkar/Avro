@@ -1,0 +1,39 @@
+import pandas as pd
+from google.cloud import bigquery
+
+# Authenticate to BigQuery using service account credentials
+# Replace 'path_to_service_account_json' with the path to your service account JSON file
+# Replace 'your_project_id' with your Google Cloud project ID
+from google.oauth2 import service_account
+credentials = service_account.Credentials.from_service_account_file('path_to_service_account_json')
+project_id = 'your_project_id'
+
+# Assuming you have a Pandas DataFrame called 'df'
+# Replace 'your_dataset' and 'your_table' with your desired dataset and table name
+table_id = 'your_project_id.your_dataset.your_table'
+
+# Write DataFrame to BigQuery
+df.to_gbq(destination_table=table_id, project_id=project_id, if_exists='replace')
+
+print("DataFrame successfully written to BigQuery table.")
+
+
+========
+
+# Set the destination URI for the Avro file
+destination_uri = 'gs://your_bucket/your_file.avro'
+
+# Initialize a BigQuery client
+client = bigquery.Client(credentials=credentials, project=project_id)
+
+# Extract table to Avro file
+job = client.extract_table(
+    table_id,
+    destination_uri,
+    # Location must match that of the source table
+    location='US'
+) 
+
+job.result()  # Wait for the job to complete
+
+print(f'Table {table_id} exported to {destination_uri} as Avro file.')
