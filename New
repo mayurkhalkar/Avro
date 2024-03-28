@@ -1,0 +1,42 @@
+import pandas as pd
+from pandas_avro import ToAvro
+
+# Your DataFrame
+data = {
+    'id': [1, 2, 3, 4],
+    'name': ['b', 'd', 'as', ''],
+    'list': [['hh', 'gg'], None, None, ['']],
+    'integer': [44, 49, 46, 44]
+}
+df = pd.DataFrame(data)
+
+# Function to infer Avro schema from DataFrame
+def infer_avro_schema(df):
+    schema = {}
+    for column, dtype in df.dtypes.items():
+        avro_type = None
+        if dtype == 'int64':
+            avro_type = 'int'
+        elif dtype == 'float64':
+            avro_type = 'float'
+        elif dtype == 'object':
+            avro_type = 'string'
+        elif dtype == 'bool':
+            avro_type = 'boolean'
+        elif dtype == 'datetime64[ns]':
+            avro_type = 'long'  # Convert datetime to epoch timestamp
+        elif dtype == 'timedelta64[ns]':
+            avro_type = 'int'  # Convert timedelta to milliseconds
+        schema[column] = avro_type
+    return schema
+
+# Generate Avro schema
+avro_schema = infer_avro_schema(df)
+
+# Convert DataFrame to Avro
+avro_converter = ToAvro(avro_schema)
+avro_data = avro_converter.convert(df)
+
+# Write Avro data to file
+with open('data.avro', 'wb') as f:
+    f.write(avro_data)
