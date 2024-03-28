@@ -1,0 +1,42 @@
+import requests
+import fastavro
+from google.cloud import storage
+from io import BytesIO
+
+# Step 1: Retrieve API Response
+api_url = "https://api.example.com/data"
+response = requests.get(api_url)
+api_data = response.json()  # Assuming JSON response
+
+# Step 2: Parse API Response
+# Assuming the API response is a list of dictionaries containing records
+records = api_data['records']
+
+# Step 3: Convert to Avro
+schema = {
+    "type": "record",
+    "name": "Record",
+    "fields": [
+        {"name": "field1", "type": "string"},
+        {"name": "field2", "type": "int"},
+        # Add more fields as necessary
+    ]
+}
+
+# Step 4: Write to Avro File
+avro_bytes_io = BytesIO()
+fastavro.writer(avro_bytes_io, schema, records)
+avro_bytes_io.seek(0)
+
+# Step 5: Upload to Google Cloud Storage
+bucket_name = "your_bucket_name"
+avro_filename = "data.avro"
+
+storage_client = storage.Client()
+bucket = storage_client.bucket(bucket_name)
+blob = bucket.blob(avro_filename)
+
+# Upload the Avro file contents
+blob.upload_from_file(avro_bytes_io, content_type="avro/binary")
+
+print(f"Avro file {avro_filename} uploaded to Google Cloud Storage bucket {bucket_name}")
